@@ -4,9 +4,9 @@ from dataclasses import dataclass
 
 from bs4 import BeautifulSoup, Tag
 
-from autenticacao import SessaoAutenticada
-from navegacao import buscar_tela
-from parsing import (
+from ..core.autenticacao import SessaoAutenticada
+from ..core.navegacao import buscar_tela
+from ..core.parsing import (
     extrair_id_consulta,
     limpar_texto,
     para_decimal,

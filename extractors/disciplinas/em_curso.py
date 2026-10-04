@@ -6,9 +6,9 @@ from dataclasses import dataclass
 
 from bs4 import BeautifulSoup, Tag
 
-from autenticacao import SessaoAutenticada
-from navegacao import buscar_tela
-from parsing import limpar_texto, separar_codigo_nome
+from ..core.autenticacao import SessaoAutenticada
+from ..core.navegacao import buscar_tela
+from ..core.parsing import limpar_texto, separar_codigo_nome
 
 TEXTO_LINK_EM_CURSO = "Disciplinas em Curso"
 COLUNAS_ESPERADAS = 5

@@ -4,9 +4,9 @@ from dataclasses import dataclass
 
 from bs4 import BeautifulSoup
 
-from autenticacao import SessaoAutenticada
-from navegacao import buscar_tela
-from parsing import extrair_id_consulta, separar_codigo_nome
+from ..core.autenticacao import SessaoAutenticada
+from ..core.navegacao import buscar_tela
+from ..core.parsing import extrair_id_consulta, separar_codigo_nome
 
 TEXTO_LINK_CURRICULO = "Disciplinas do Currículo"
 COLUNAS_ESPERADAS = 9

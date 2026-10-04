@@ -7,10 +7,10 @@ from dataclasses import dataclass
 
 from bs4 import BeautifulSoup, Tag
 
-from autenticacao import SessaoAutenticada
-from cliente_http import post_html
-from config import REQUISICAO_URL
-from parsing import separar_codigo_nome
+from ..core.autenticacao import SessaoAutenticada
+from ..core.cliente_http import post_html
+from ..core.config import REQUISICAO_URL
+from ..core.parsing import separar_codigo_nome
 
 PAUSA_PADRAO_SEGUNDOS = 0.5
 

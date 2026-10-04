@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import requests
 from bs4 import BeautifulSoup
 
-from cliente_http import criar_sessao, get_html, post_html
-from config import BASE_URL, REQUISICAO_URL
+from .cliente_http import criar_sessao, get_html, post_html
+from .config import BASE_URL, REQUISICAO_URL
 
 ID_BLOCO_LOGIN = "caixa_bloco_login"
 

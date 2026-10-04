@@ -2,7 +2,7 @@
 
 import requests
 
-from config import ENCODING_SITE, HEADERS, TIMEOUT_SEGUNDOS
+from .config import ENCODING_SITE, HEADERS, TIMEOUT_SEGUNDOS
 
 
 def criar_sessao() -> requests.Session:

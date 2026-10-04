@@ -9,15 +9,15 @@ from dataclasses import asdict
 
 import requests
 
-from autenticacao import AutenticacaoError, LoginError, SessaoAutenticada, fazer_login
-from detalhes_disciplina import DetalheDisciplina, DetalheDisciplinaError, buscar_detalhe
-from disciplinas_curriculo import (
+from .core.autenticacao import AutenticacaoError, LoginError, SessaoAutenticada, fazer_login
+from .core.navegacao import NavegacaoError
+from .disciplinas.curriculo import (
     Disciplina,
     DisciplinasError,
     buscar_html_disciplinas,
     parse_disciplinas,
 )
-from navegacao import NavegacaoError
+from .disciplinas.detalhes import DetalheDisciplina, DetalheDisciplinaError, buscar_detalhe
 
 
 # --------------------------------------------------------------------------- #

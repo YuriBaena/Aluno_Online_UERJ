@@ -5,9 +5,9 @@ import unicodedata
 
 from bs4 import BeautifulSoup
 
-from autenticacao import SessaoAutenticada, extrair_token
-from cliente_http import post_html
-from config import REQUISICAO_URL
+from .autenticacao import SessaoAutenticada, extrair_token
+from .cliente_http import post_html
+from .config import REQUISICAO_URL
 
 _RE_HASH = re.compile(r"""['"]([0-9a-f]{32})['"]""")
 
