@@ -5,6 +5,7 @@ import getpass
 import json
 import os
 import sys
+from collections.abc import Callable, Sequence
 from dataclasses import asdict
 from pathlib import Path
 
@@ -30,6 +31,13 @@ from .disciplinas.em_curso import (
     DisciplinasEmCursoError,
     buscar_disciplinas_em_curso,
 )
+from .disciplinas.universais import (
+    DisciplinaUniversal,
+    DisciplinasUniversaisError,
+    buscar_html_universais,
+    parse_disciplinas_universais,
+)
+from .formacao.sintese import SinteseFormacao, SinteseFormacaoError, buscar_sintese
 
 
 # --------------------------------------------------------------------------- #
@@ -44,8 +52,11 @@ def ler_credenciais() -> tuple[str, str]:
     return matricula, senha
 
 
-def escolher_disciplina(entrada: str, disciplinas: list[Disciplina]) -> Disciplina | None:
-    """Aceita o número da lista (ex.: '3') ou o código (ex.: 'IME01-04827')."""
+def escolher_disciplina(entrada: str, disciplinas: Sequence):
+    """Aceita o número da lista (ex.: '3') ou o código (ex.: 'IME01-04827').
+
+    Funciona com qualquer item que tenha `codigo` (Disciplina, DisciplinaUniversal...).
+    """
     if entrada.isdigit():
         posicao = int(entrada)
         return disciplinas[posicao - 1] if 1 <= posicao <= len(disciplinas) else None
@@ -71,6 +82,23 @@ def imprimir_disciplinas(disciplinas: list[Disciplina]) -> None:
             f"{d.atendida:<7}{d.tipo:<12}{d.creditos:<6}{d.turma_no_periodo}"
         )
     print(f"\nTotal: {len(disciplinas)} disciplinas")
+
+
+def imprimir_universais(disciplinas: list[DisciplinaUniversal]) -> None:
+    print("\nDisciplinas universais:")
+    if not disciplinas:
+        print("Nenhuma disciplina universal encontrada.")
+        return
+
+    cabecalho = f"{'Nº':<5}{'Código':<16}{'Disciplina':<62}{'Cred.':<7}{'CH':<6}{'Turma?'}"
+    print(cabecalho)
+    print("-" * len(cabecalho))
+    for numero, d in enumerate(disciplinas, start=1):
+        print(
+            f"{numero:<5}{d.codigo:<16}{d.nome[:60]:<62}"
+            f"{d.creditos:<7}{d.carga_horaria:<6}{d.turma_no_periodo}"
+        )
+    print(f"\nTotal: {len(disciplinas)} disciplinas universais")
 
 
 def imprimir_disciplinas_cursadas(disciplinas: list[DisciplinaCursada]) -> None:
@@ -111,6 +139,48 @@ def imprimir_disciplinas_em_curso(disciplinas: list[DisciplinaEmCurso]) -> None:
         print(f"  Local de aula: {d.local_aula or '-'}")
         print(f"  Horários: {horarios}")
     print(f"\nTotal: {len(disciplinas)} disciplinas em curso")
+
+
+def imprimir_sintese(s: SinteseFormacao) -> None:
+    print("\n" + "=" * 72)
+    print("Síntese da formação")
+    print("=" * 72)
+    print(f"Curso: {s.curso} | Regime: {s.regime}")
+    print(f"Centro: {s.centro}")
+    print(f"Unidade: {s.unidade}")
+    print(f"Versão curricular: {s.versao_curricular}")
+    print(f"Ingresso: {s.ingresso} | Situação: {s.situacao_aluno}")
+    cr = f"{s.coeficiente_rendimento:.2f}".replace(".", ",") if s.coeficiente_rendimento is not None else "-"
+    print(f"Coeficiente de rendimento: {cr}")
+    print(f"Titulação: {s.titulacao} | Situação: {s.situacao_titulacao}")
+    print(
+        f"Conclusão: {s.conclusao or '-'} | Período: {s.periodo_conclusao or '-'} "
+        f"| Colação de grau: {s.colacao_grau or '-'}"
+    )
+
+    print("\nRequisitos da titulação (créditos):")
+    for r in s.requisitos_titulacao:
+        print(f"  - {r.descricao}: {_num(r.cumprido)} cumpridos / {_num(r.a_cumprir)} a cumprir ({r.situacao})")
+
+    print("\nRequisitos do currículo (créditos):")
+    for r in s.requisitos_curriculo:
+        recuo = "  " * (r.nivel + 1)
+        if r.cumprido is None and r.exigido is None:
+            print(f"{recuo}- {r.descricao}")
+        else:
+            print(f"{recuo}- {r.descricao}: {_num(r.cumprido)}/{_num(r.exigido)} ({r.situacao})")
+
+    print("\nPeríodos letivos:")
+    print(
+        f"  Mínimo: {_num(s.minimo_periodos)} | Utilizados: {_num(s.periodos_utilizados)} "
+        f"| Máximo: {_num(s.maximo_periodos)} | Restantes: {_num(s.periodos_restantes)}"
+    )
+    for p in s.periodos:
+        print(f"  {p.periodo}: {p.situacao}")
+
+
+def _num(valor: int | None) -> str:
+    return "-" if valor is None else str(valor)
 
 
 def imprimir_detalhe(d: DetalheDisciplina) -> None:
@@ -175,10 +245,15 @@ def salvar_json(disciplinas: list[Disciplina], caminho: str) -> None:
 
 def menu_detalhes(
     autenticado: SessaoAutenticada,
-    html_curriculo: str,
-    disciplinas: list[Disciplina],
+    html_origem: str,
+    disciplinas: Sequence,
+    listar: Callable[[list], None] = imprimir_disciplinas,
 ) -> None:
-    """Loop: o usuário escolhe uma disciplina da lista e vê os detalhes."""
+    """Loop: o usuário escolhe uma disciplina da lista e vê os detalhes.
+
+    `html_origem` é o HTML da página que contém a lista (currículo ou universais),
+    pois é dela que sai o formulário usado na consulta.
+    """
     print("\nDigite o número (ou o código) da disciplina para ver os detalhes.")
     print("Comandos: 'l' lista novamente | 'q' sai")
 
@@ -194,7 +269,7 @@ def menu_detalhes(
         if comando in {"q", "sair"}:
             return
         if comando == "l":
-            imprimir_disciplinas(disciplinas)
+            listar(list(disciplinas))
             continue
 
         disciplina = escolher_disciplina(entrada, disciplinas)
@@ -202,17 +277,17 @@ def menu_detalhes(
             print("Disciplina inválida. Use o número da lista ou o código (ex.: IME01-04827).")
             continue
 
-        _consultar_e_imprimir(autenticado, html_curriculo, disciplina)
+        _consultar_e_imprimir(autenticado, html_origem, disciplina)
 
 
 def _consultar_e_imprimir(
     autenticado: SessaoAutenticada,
-    html_curriculo: str,
-    disciplina: Disciplina,
+    html_origem: str,
+    disciplina,
 ) -> None:
     print(f"Buscando detalhes de {disciplina.codigo}...")
     try:
-        detalhe = buscar_detalhe(autenticado, html_curriculo, disciplina.id)
+        detalhe = buscar_detalhe(autenticado, html_origem, disciplina.id)
     except (DetalheDisciplinaError, requests.RequestException) as erro:
         # um erro numa consulta não derruba o menu
         print(f"Não foi possível obter os detalhes: {erro}", file=sys.stderr)
@@ -245,6 +320,16 @@ def criar_parser() -> argparse.ArgumentParser:
         "--em-curso",
         action="store_true",
         help="também mostra as disciplinas em curso e seus horários",
+    )
+    parser.add_argument(
+        "--universais",
+        action="store_true",
+        help="também mostra as disciplinas universais com turma no período (e seus detalhes)",
+    )
+    parser.add_argument(
+        "--sintese",
+        action="store_true",
+        help="também mostra a síntese da formação",
     )
     parser.add_argument(
         "--sem-menu",
@@ -283,6 +368,18 @@ def main() -> int:
             print("\nBuscando disciplinas em curso...")
             imprimir_disciplinas_em_curso(buscar_disciplinas_em_curso(autenticado))
 
+        if args.sintese:
+            print("\nBuscando síntese da formação...")
+            imprimir_sintese(buscar_sintese(autenticado))
+
+        if args.universais:
+            print("\nBuscando disciplinas universais...")
+            html_universais = buscar_html_universais(autenticado)
+            universais = parse_disciplinas_universais(html_universais)
+            imprimir_universais(universais)
+            if not args.sem_menu:
+                menu_detalhes(autenticado, html_universais, universais, imprimir_universais)
+
         if not args.sem_menu:
             menu_detalhes(autenticado, html_curriculo, disciplinas)
 
@@ -295,6 +392,8 @@ def main() -> int:
         DisciplinasError,
         DisciplinasCursadasError,
         DisciplinasEmCursoError,
+        DisciplinasUniversaisError,
+        SinteseFormacaoError,
         DetalheDisciplinaError,
     ) as erro:
         print(f"Erro: {erro}", file=sys.stderr)
