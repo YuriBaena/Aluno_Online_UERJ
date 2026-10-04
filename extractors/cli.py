@@ -17,7 +17,17 @@ from .disciplinas.curriculo import (
     buscar_html_disciplinas,
     parse_disciplinas,
 )
+from .disciplinas.cursadas import (
+    DisciplinaCursada,
+    DisciplinasCursadasError,
+    buscar_disciplinas_cursadas,
+)
 from .disciplinas.detalhes import DetalheDisciplina, DetalheDisciplinaError, buscar_detalhe
+from .disciplinas.em_curso import (
+    DisciplinaEmCurso,
+    DisciplinasEmCursoError,
+    buscar_disciplinas_em_curso,
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -58,6 +68,46 @@ def imprimir_disciplinas(disciplinas: list[Disciplina]) -> None:
             f"{d.atendida:<7}{d.tipo:<12}{d.creditos:<6}{d.turma_no_periodo}"
         )
     print(f"\nTotal: {len(disciplinas)} disciplinas")
+
+
+def imprimir_disciplinas_cursadas(disciplinas: list[DisciplinaCursada]) -> None:
+    print("\nDisciplinas cursadas:")
+    if not disciplinas:
+        print("Nenhuma disciplina cursada encontrada.")
+        return
+
+    cabecalho = (
+        f"{'Período':<9}{'Código':<14}{'Disciplina':<45}{'Cred.':<7}"
+        f"{'CH':<6}{'Freq.':<9}{'Nota':<8}{'Situação'}"
+    )
+    print(cabecalho)
+    print("-" * len(cabecalho))
+    for d in disciplinas:
+        frequencia = f"{d.frequencia:.2f}%".replace(".", ",") if d.frequencia is not None else "-"
+        nota = f"{d.nota:.2f}".replace(".", ",") if d.nota is not None else "-"
+        print(
+            f"{d.periodo:<9}{d.codigo:<14}{d.nome[:43]:<45}{d.creditos:<7}"
+            f"{d.carga_horaria:<6}{frequencia:<9}{nota:<8}{d.situacao}"
+        )
+    print(f"\nTotal: {len(disciplinas)} disciplinas cursadas")
+
+
+def imprimir_disciplinas_em_curso(disciplinas: list[DisciplinaEmCurso]) -> None:
+    print("\nDisciplinas em curso:")
+    if not disciplinas:
+        print("Nenhuma disciplina em curso encontrada.")
+        return
+
+    for d in disciplinas:
+        horarios = "; ".join(
+            f"{h.dia}: {h.tempo} ({h.inicio}-{h.fim})" for h in d.horarios
+        ) or "-"
+        print(f"\n{d.codigo} - {d.nome}")
+        print(f"  Turma: {d.turma or '-'}")
+        print(f"  Local AVA: {d.local_ava or '-'}")
+        print(f"  Local de aula: {d.local_aula or '-'}")
+        print(f"  Horários: {horarios}")
+    print(f"\nTotal: {len(disciplinas)} disciplinas em curso")
 
 
 def imprimir_detalhe(d: DetalheDisciplina) -> None:
@@ -172,12 +222,26 @@ def _consultar_e_imprimir(
 # --------------------------------------------------------------------------- #
 
 def criar_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Disciplinas do currículo - Aluno Online UERJ")
-    parser.add_argument("--json", metavar="ARQUIVO", help="salva a lista de disciplinas em JSON")
+    parser = argparse.ArgumentParser(description="Consultas de disciplinas - Aluno Online UERJ")
+    parser.add_argument(
+        "--json",
+        metavar="ARQUIVO",
+        help="salva a lista de disciplinas do currículo em JSON",
+    )
     parser.add_argument(
         "--pendentes",
         action="store_true",
         help="mostra apenas as disciplinas ainda não atendidas",
+    )
+    parser.add_argument(
+        "--cursadas",
+        action="store_true",
+        help="também mostra as disciplinas já cursadas",
+    )
+    parser.add_argument(
+        "--em-curso",
+        action="store_true",
+        help="também mostra as disciplinas em curso e seus horários",
     )
     parser.add_argument(
         "--sem-menu",
@@ -208,13 +272,28 @@ def main() -> int:
         if args.json:
             salvar_json(disciplinas, args.json)
 
+        if args.cursadas:
+            print("\nBuscando disciplinas cursadas...")
+            imprimir_disciplinas_cursadas(buscar_disciplinas_cursadas(autenticado))
+
+        if args.em_curso:
+            print("\nBuscando disciplinas em curso...")
+            imprimir_disciplinas_em_curso(buscar_disciplinas_em_curso(autenticado))
+
         if not args.sem_menu:
             menu_detalhes(autenticado, html_curriculo, disciplinas)
 
     except LoginError as erro:
         print(f"Erro de login: {erro}", file=sys.stderr)
         return 1
-    except (AutenticacaoError, NavegacaoError, DisciplinasError, DetalheDisciplinaError) as erro:
+    except (
+        AutenticacaoError,
+        NavegacaoError,
+        DisciplinasError,
+        DisciplinasCursadasError,
+        DisciplinasEmCursoError,
+        DetalheDisciplinaError,
+    ) as erro:
         print(f"Erro: {erro}", file=sys.stderr)
         return 1
     except requests.RequestException as erro:

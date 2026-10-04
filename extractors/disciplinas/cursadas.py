@@ -14,7 +14,7 @@ from ..core.parsing import (
     separar_codigo_nome,
 )
 
-TEXTO_LINK_CURSADAS = "Requisitos Realizados"
+TEXTO_LINK_CURSADAS = "Requisitos Cursados"
 COLUNAS_ESPERADAS = 8
 
 

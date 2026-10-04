@@ -11,6 +11,7 @@ Ferramenta de linha de comando em Python que faz login no [Aluno Online da UERJ]
 - Login automático (obtém `PHPSESSID`, `_token` e `requisicao` dinamicamente).
 - Descoberta automática da `requisicao` do link "Disciplinas do Currículo" no menu pós-login (nada fixo no código).
 - Extração tipada das disciplinas: código, nome, período, tipo, créditos, carga horária etc.
+- Consulta opcional das disciplinas cursadas e das disciplinas em curso, incluindo horários.
 - Filtro de disciplinas **pendentes** (não atendidas).
 - Exportação para **JSON**.
 - Tratamento de erros separado por tipo (login, autenticação, parsing e rede).
@@ -113,12 +114,26 @@ python -m extractors --json disciplinas.json
 
 # Combinando
 python -m extractors --pendentes --json pendentes.json
+
+# Também mostra o histórico de disciplinas cursadas
+python -m extractors --cursadas
+
+# Também mostra disciplinas em curso e seus horários
+python -m extractors --em-curso
+
+# Mostra as duas consultas adicionais
+python -m extractors --cursadas --em-curso --sem-menu
 ```
 
 | Opção | Descrição |
 |---|---|
 | `--pendentes` | Mostra só as disciplinas com "Atendida?" igual a "Não". |
-| `--json ARQUIVO` | Salva a lista exibida em um arquivo JSON (UTF-8). |
+| `--cursadas` | Também consulta e mostra disciplinas já cursadas, com período, frequência, nota e situação. |
+| `--em-curso` | Também consulta e mostra disciplinas em curso, turma, locais e horários. |
+| `--json ARQUIVO` | Salva a lista de disciplinas do currículo em um arquivo JSON (UTF-8). |
+| `--sem-menu` | Omite o menu interativo de consulta de detalhes. |
+
+As opções `--cursadas` e `--em-curso` podem ser combinadas. A listagem padrão e a exportação `--json` continuam referentes ao currículo.
 
 ### Credenciais por variável de ambiente
 
