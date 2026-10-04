@@ -135,17 +135,28 @@ python -m extractors --cursadas --em-curso --sem-menu
 
 As opções `--cursadas` e `--em-curso` podem ser combinadas. A listagem padrão e a exportação `--json` continuam referentes ao currículo.
 
-### Credenciais por variável de ambiente
+### Credenciais com arquivo `.env`
 
-Para não digitar toda vez (o `read -s` evita que a senha apareça na tela e no histórico):
+Copie `extractors/.env.example` para `extractors/.env` e preencha os valores:
 
 ```bash
-export UERJ_MATRICULA="sua_matricula"
-read -s UERJ_SENHA && export UERJ_SENHA
-python -m extractors
+cp extractors/.env.example extractors/.env
 ```
 
-Se as variáveis não existirem, o programa pergunta no terminal (a senha é lida com `getpass`, sem eco).
+No PowerShell, use:
+
+```powershell
+Copy-Item extractors/.env.example extractors/.env
+```
+
+Edite `extractors/.env`:
+
+```dotenv
+UERJ_MATRICULA=sua_matricula
+UERJ_SENHA=sua_senha
+```
+
+O `.env` local é carregado automaticamente e está no `.gitignore`; nunca o envie ao repositório. O arquivo `.env.example` não contém credenciais e pode ser versionado. Variáveis já definidas no ambiente têm precedência sobre os valores do arquivo. Se uma ou ambas estiverem ausentes, a CLI solicita os dados no terminal, sem exibir a senha.
 
 ### Códigos de saída
 
@@ -242,14 +253,7 @@ with open("disciplinas.html", encoding="iso-8859-1") as f:
 
 - **Nunca grave a senha no código** nem a envie em commits, prints ou conversas.
 - Se uma senha for exposta, troque-a imediatamente no Aluno Online.
-- Ao versionar com git, crie um `.gitignore`:
-
-```
-.venv/
-__pycache__/
-*.json
-*.html
-```
+- O `.gitignore` na raiz do repositório exclui `.env`, ambientes virtuais, caches de Python e arquivos HTML/JSON gerados.
 
 ---
 

@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local credentials and environment files
+.env
+.env.*
+!.env.example
+
+# Generated extractor output
+*.json
+*.html
+
+# Test and tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/

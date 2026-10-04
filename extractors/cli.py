@@ -6,8 +6,10 @@ import json
 import os
 import sys
 from dataclasses import asdict
+from pathlib import Path
 
 import requests
+from dotenv import load_dotenv
 
 from .core.autenticacao import AutenticacaoError, LoginError, SessaoAutenticada, fazer_login
 from .core.navegacao import NavegacaoError
@@ -35,7 +37,8 @@ from .disciplinas.em_curso import (
 # --------------------------------------------------------------------------- #
 
 def ler_credenciais() -> tuple[str, str]:
-    """Usa variáveis de ambiente se existirem; senão, pergunta no terminal."""
+    """Carrega credenciais locais; usa o ambiente ou pergunta se estiverem ausentes."""
+    load_dotenv(Path(__file__).resolve().parent / ".env")
     matricula = os.getenv("UERJ_MATRICULA") or input("Matrícula: ").strip()
     senha = os.getenv("UERJ_SENHA") or getpass.getpass("Senha: ")
     return matricula, senha
